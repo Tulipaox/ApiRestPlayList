@@ -1,10 +1,4 @@
-let playLists = [
-    { id: 1, name: "braba", tags: ["melancólica"], musicas: [{ id: 1, title: "Skyfall", ano: 2020, artista: "Adele", album: "Skyfall" }, 
-        { id: 2, title: "Skyfall", ano: 2020, artista: "Adele", album: "Skyfall" }] },
-    { id: 2, name: "ox", tags: ["R&B"], musicas: [{ id: 2, title: "White Ferrari", ano: 2015, artista: "Frank Ocean", album: "Blonde" }] },
-    { id: 3, name: "trap", tags: ["melancólica"], musicas: [{ id: 3, title: "Chest Pain", ano: 2020, artista: "Malcolm Todd", album: "Malcolm Todd" }] }
-]
-
+let playLists = []
 
 module.exports = {
     // GET /playlist
@@ -25,7 +19,7 @@ module.exports = {
         }
     },
 
-    // GET /playlist/:id/musicAll
+    // GET /playlist/:id/musicAll todas as musicas 
     showMusics: (req, res) =>{
         const { id } = req.params
 
@@ -38,7 +32,7 @@ module.exports = {
         }
     },
 
-    // GET /playlist/:id/music/:id
+    // GET /playlist/:id/music/:id acha uma musica 
     detailsMusic: (req, res) =>{
         const { id, musicID } = req.params
 
@@ -46,23 +40,35 @@ module.exports = {
         const music = playList.musicas.find(music => music.id === +musicID)
         if(!playLists) {
             res.json({ message: "Play List not found!"})
-        } else{
-            res.json(music)
+        } 
+
+        if(!music) {
+            res.json({ message: "Play List not found!"})
         }
+
+        res.status(200).json(music)
     },
     // POST /playlist
     savePlay: (req, res) =>{
-        const { name, tags, musicas, title, ano, artista, album } = req.body
+        const { name, tags, musicas} = req.body
 
+        if(typeof name !== "string") {
+            return res.status(400).json({ message: 'name must be a string'}) 
+        } 
+
+        if (!Array.isArray(tags)) {
+         return res.status(400).json({ message: 'tags must be an array' })
+         }
+  
+        if (musicas && !Array.isArray(musicas)) {
+        return res.status(400).json({ message: 'musics must be an array' })
+        } 
+  
         const newPlay = {
             id: Math.floor(Math.random() * 9999999),
             name,
             tags,
-            musicas,
-            title,
-            ano,
-            artista, 
-            album
+            musicas: musicas ?? []
         }
 
         playLists.push(newPlay)
@@ -74,6 +80,28 @@ module.exports = {
         const { title, ano, artista, album } = req.body
         const { id } = req.params
 
+        if(typeof title !== 'string') {
+            return res.status(400).json({ message: 'title must be a string'}) 
+        }
+        
+        if(typeof ano !== 'number') {
+            return res.status(400).json({ message: 'ano must be a number'}) 
+        }
+
+        if(typeof artista !== 'string') {
+            return res.status(400).json({ message: 'artista must be a string'}) 
+        }
+
+        if(typeof album !== 'string') {
+            return res.status(400).json({ message: 'album must be a string'}) 
+        }
+
+        const playList = playLists.find(play => play.id === +id) 
+
+        if(!playList) {
+            res.json({ message: "PlayList not found!"})
+        } 
+
         const newMusic = {
             id: Math.floor(Math.random() * 9999999),
             title,
@@ -82,13 +110,7 @@ module.exports = {
             album
         }
 
-        const playList = playLists.find(play => play.id === +id) 
-
-        if(!playList) {
-            res.json({ message: "PlayList not found!"})
-        } else {
-            playList.musicas.push(newMusic)
-        }
+        playList.musicas.push(newMusic)
         
         res.status(201)
         res.json(newMusic)
@@ -97,7 +119,6 @@ module.exports = {
     // const playIndex - playlist.findIndex(play => play.id === +id)
        // playlist[playIndex].name = name
        // playlist[playIndex].tags.splice(0, tag)
-
 
     UpDatePlay: (req, res) =>{
         const { name, tags } = req.body
@@ -110,9 +131,14 @@ module.exports = {
             res.status(404)
         } 
 
-        if(typeof name !== "string" && typeof tags !== "string") {
-           return res.status(400).json({ message: "Format Invalid!"})
-        } 
+        // não verifiquei se a tags e um array, por que queremos apenas atualizar o conteúdo ja existente nele logo ele já é um array
+        if(typeof name !== 'string') {
+            return res.status(400).json({ message: 'name must be a string'}) 
+        }
+
+        if(typeof tags !== 'string') {
+            return res.status(400).json({ message: 'tags must be a string'}) 
+        }
         
         playLists[playIndex].name = name
         playLists[playIndex].tags.splice(0, 1, tags)
@@ -120,6 +146,7 @@ module.exports = {
         res.status(200)
         res.json(playLists[playIndex])
     },
+
     // DELETE /playlist/:id
     deletePlay: (req, res) =>{
         const { id } = req.params
@@ -142,7 +169,6 @@ module.exports = {
         const playList = playLists.find(play => play.id === +id)
         const musicIndex = playList.musicas.findIndex(music => music.id === +musicID)
         
-
         if(!playList){
             res.json({ message: "PLay List not found!"})
             res.status(404) 
